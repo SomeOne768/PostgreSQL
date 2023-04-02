@@ -39,4 +39,14 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+DO $$
+DECLARE
+    req RECORD;
+BEGIN
+    FOR req IN SELECT * FROM emp WHERE sal > 4000 AND empno != 7902 ORDER BY empno DESC LIMIT 1 LOOP
+        INSERT INTO temp VALUES (req.sal, req.ename, NULL);
+    END LOOP;
+END;
+$$;
     

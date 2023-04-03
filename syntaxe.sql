@@ -96,4 +96,43 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE raisesalary_az(emp_id integer, amount decimal(7,2)) AS
+$$
+DECLARE
+    est_dans_intervalle integer := 0;
+    req RECORD;
+    newSal decimal(7,2);
+BEGIN
+    FOR req in SELECT job, sal FROM emp WHERE empno = emp_id LOOP 
+        newSal := req.sal + amount;
+        est_dans_intervalle := salok_az(req.job::TEXT, newSal::integer);
+        IF est_dans_intervalle = 1 THEN
+            UPDATE emp
+            SET sal = newSal
+            WHERE empno = emp_id;
+        END IF;
+    END LOOP;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+DO $$
+DECLARE
+    schema_name text;
+    table_name text;
+BEGIN
+    FOR schema_name, table_name IN
+        SELECT table_schema, table_name
+        FROM information_schema.tables
+        WHERE table_type = 'BASE TABLE'
+          AND table_schema NOT IN ('pg_catalog', 'information_schema')
+          AND table_schema = current_schema() 
+    LOOP
+        EXECUTE format('COPY %I.%I TO ''/backup/%s_%s.csv'' CSV HEADER', schema_name, table_name, schema_name, table_name);
+    END LOOP;
+END $$;
+
+
     
